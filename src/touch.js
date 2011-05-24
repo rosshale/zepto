@@ -35,7 +35,7 @@
     }).bind('touchcancel', function(){ touch = {} });
   });
 
-  ['swipe', 'swipeLeft', 'swipeRight', 'swipeUp', 'swipeDown', 'doubleTap', 'tap'].forEach(function(m){
+  ['swipe', 'swipeLeft', 'swipeRight', 'swipeUp', 'swipeDown', 'tap'].forEach(function(m){
     $.fn[m] = function(callback){ return this.bind(m, callback) }
   });
 })(Zepto);
