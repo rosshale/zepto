@@ -279,6 +279,15 @@ var Zepto = (function() {
           return;
         } catch(e) {};
       });
+    },
+    getValues: function(){
+      var result = {};
+      $(Array.prototype.slice.call(this.get(0).elements)).each(function () {
+        if ($(this).attr('type') !== 'radio' || $(this).is(':checked')) {
+          result[$(this).attr('name')] = $(this).val();
+        }
+      });
+      return result;
     }
   };
 

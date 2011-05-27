@@ -151,9 +151,17 @@
 
   <input type="text" id="BooleanInput" required />
 
-  <form id="some_form"></form>
-
-  <div class="replace_test_div">test</div>
+  <form id="form-for-get-values">
+    <input name="number" value="42" />
+    <textarea name="text">Some text</textarea>
+    <input type="radio" name="choose" value="1" />
+    <input type="radio" name="choose" value="2" checked />
+    <input type="radio" name="choose" value="3" />
+    <select name="menu">
+      <option value="1" selected>1</option>
+      <option value="2">2</option>
+    </select>
+  </form>
 
   <script>
 
@@ -1223,6 +1231,15 @@
         t.assertEqual($('#BooleanInput').attr('required'), true);
         t.assertEqual($('#BooleanInput').attr('non_existant_attr'), undefined);
       },
+
+      testFormGetValues: function (t) {
+        var values = $('#form-for-get-values').getValues();
+
+        t.assertEqual(values['number'], '42');
+        t.assertEqual(values['text'], 'Some text');
+        t.assertEqual(values['choose'], '2');
+        t.assertEqual(values['menu'], '1');
+      }
 
       testDocumentReady: function (t) {
         // Check that if document is already loaded, ready() immediately executes callback
