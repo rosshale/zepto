@@ -43,7 +43,7 @@
 
   <div id="data_attr" data-blah="whatever"></div>
 
-  <input type="text" id="attr_with_text_input" name="attr_input" value="Hello World" />
+  <form><input type="text" id="attr_with_text_input" name="attr_input" value="Hello World" /></form>
 
   <div class="htmltest" id="htmltest1"></div>
   <div class="htmltest" id="htmltest2"></div>
@@ -75,6 +75,10 @@
     <span>3<span>4</span></span>
     <span>5<span>6</span></span>
   </p>
+
+  <div id="eachtest">
+    <span></span><b></b><br>
+  </div>
 
   <div style="position:absolute;width:100px;height:50px" id="offset">test</div>
 
@@ -163,6 +167,35 @@
     </select>
   </form>
 
+  <div id="wrap_test_div"><span>hi</span><span>hi</span></div>
+
+  <div id="unwrap_test">
+    <div class="unwrap_one"><b><span></span></b></div>
+    <div class="unwrap_two"><b><span>1</span><span>2</span></b></div>
+  </div>
+
+  <div id="slice_test">
+    <div class="slice1"></div>
+    <div class="slice2"></div>
+    <div class="slice3"></div>
+  </div>
+
+  <div id="eq_test">
+    <div class="eq0"></div>
+    <div class="eq1"></div>
+    <div class="eq2"></div>
+  </div>
+
+  <div id="end_test">
+    <div class="end_one"><b><span></span></b></div>
+    <div class="end_two"><b><span>1</span><span>2</span></b></div>
+  </div>
+
+  <div id="index_test">
+    <div class="index0"></div>
+    <div class="index1"></div>
+  </div>
+
   <script>
 
     function click(el){
@@ -175,6 +208,16 @@
       var event = document.createEvent('MouseEvents');
       event.initMouseEvent('mousedown', true, true, document.defaultView, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
       el.dispatchEvent(event);
+    }
+
+    function outerHTML(node) {
+      return node.outerHTML || (function(n) {
+        var div = document.createElement('div');
+        div.appendChild(n.cloneNode(true));
+        var html = div.innerHTML;
+        div = null;
+        return html;
+      })(node);
     }
 
     var globalVarSetFromReady = "";
@@ -230,6 +273,10 @@
         var obj = {};
         t.assertIdentical(obj, $.extend(obj, {a: 1}));
         t.assertEqual(1, obj.a);
+
+        obj = {};
+        t.assertIdentical(obj, $.extend(obj, {a: 1}, {b: 2}))
+        t.assertEqual(2, obj.b);
       },
 
       testDollar: function(t){
@@ -295,32 +342,74 @@
         t.assertEqual('', z.selector);
       },
 
+      testDollarWithDocumentFragment: function(t){
+        var documentFragment = $(document.createDocumentFragment());
+        t.assertLength(1, documentFragment);
+        t.assertEqual(Node.DOCUMENT_FRAGMENT_NODE, documentFragment.get(0).nodeType);
+      },
+
       testDollarWithFragment: function(t){
         var fragment = $("<div>");
         t.assertLength(1, fragment);
-        t.assertEqual("<div></div>", fragment.get(0).outerHTML);
+        t.assertEqual("<div></div>", outerHTML(fragment.get(0)));
+        t.assertEqual('', fragment.selector);
 
         fragment = $("<div>hello world</div>");
         t.assertLength(1, fragment);
-        t.assertEqual("<div>hello world</div>", fragment.get(0).outerHTML);
+        t.assertEqual("<div>hello world</div>", outerHTML(fragment.get(0)));
+        t.assertEqual('', fragment.selector);
 
         fragment = $("<div>hello</div> <span>world</span>");
         t.assertLength(3, fragment);
-        t.assertEqual("<div>hello</div>", fragment.get(0).outerHTML);
+        t.assertEqual("<div>hello</div>", outerHTML(fragment.get(0)));
         t.assertEqual(Node.TEXT_NODE, fragment.get(1).nodeType);
-        t.assertEqual("<span>world</span>", fragment.get(2).outerHTML);
+        t.assertEqual("<span>world</span>", outerHTML(fragment.get(2)));
+        t.assertEqual('', fragment.selector);
 
         fragment = $("<div>\nhello</div> \n<span>world</span>");
         t.assertLength(3, fragment);
-        t.assertEqual("<div>\nhello</div>", fragment.get(0).outerHTML);
+        t.assertEqual("<div>\nhello</div>", outerHTML(fragment.get(0)));
         t.assertEqual(Node.TEXT_NODE, fragment.get(1).nodeType);
-        t.assertEqual("<span>world</span>", fragment.get(2).outerHTML);
+        t.assertEqual("<span>world</span>", outerHTML(fragment.get(2)));
+        t.assertEqual('', fragment.selector);
       },
 
       testDollarWithTextNode: function(t){
         var textNode = $(document.createTextNode('hi there'));
         t.assertLength(1, textNode);
         t.assertEqual(Node.TEXT_NODE, textNode.get(0).nodeType);
+      },
+
+      testNodeCreationViaDollar: function (t) {
+        t.assertEqual('<div></div>', outerHTML($('<div></div>').get(0)));
+        t.assertEqual('<div></div>', outerHTML($('<div/>').get(0)));
+        t.assertEqual('<div><div></div></div>', outerHTML($('<div><div></div></div>').get(0)));
+        t.assertEqual('<div><div></div></div>', outerHTML($('<div><div/></div>').get(0)));
+        t.assertEqual('<div><div></div><div></div></div>', outerHTML($('<div><div></div><div></div></div>').get(0)));
+      },
+
+      testCreateTableCell: function(t) {
+        t.assertEqual('TD', $('<td></td>').pluck('nodeName').join(','));
+      },
+
+      testCreateTableHeaderCell: function(t) {
+        t.assertEqual('TH', $('<th></th>').pluck('nodeName').join(','));
+      },
+
+      testCreateTableRow: function(t) {
+        t.assertEqual('TR', $('<tr></tr>').pluck('nodeName').join(','));
+      },
+
+      testCreateTableHeader: function(t) {
+        t.assertEqual('THEAD', $('<thead></thead>').pluck('nodeName').join(','));
+      },
+
+      testCreateTableBody: function(t) {
+        t.assertEqual('TBODY', $('<tbody></tbody>').pluck('nodeName').join(','));
+      },
+
+      testCreateTableFooter: function(t) {
+        t.assertEqual('TFOOT', $('<tfoot></tfoot>').pluck('nodeName').join(','));
       },
 
       testReady: function(t){
@@ -340,23 +429,46 @@
 
       testEach: function(t){
         var index, tagnames = [];
-        $('h1,p').each(function(idx, el){
+        $('#eachtest > *').each(function(idx, el){
           index = idx;
-          if (this == el) tagnames.push(el.tagName);
+          t.assertIdentical(el, this);
+          tagnames.push(el.tagName.toUpperCase());
         });
-        t.assertEqual('H1, P, P, P, P', tagnames.join(', '));
-        t.assertEqual(4, index);
+        t.assertEqual('SPAN, B, BR', tagnames.join(', '));
+        t.assertEqual(2, index);
+      },
+
+      testMap: function(t){
+        var results = $('#eachtest > *').map(function(idx, el) {
+          t.assertIdentical(el, this);
+          return idx + ':' + this.nodeName.toUpperCase();
+        });
+        t.assertEqual('0:SPAN, 1:B, 2:BR', results.join(', '));
+      },
+
+      testDollarMap: function(t){
+        var fruits = ['apples', 'oranges', 'pineapple', 'peach', ['grape', 'melon']];
+        var results = $.map(fruits, function(item, i) {
+          if (item instanceof Array) return item;
+          else if (!/apple/.test(item)) return i + ':' + item;
+        })
+        t.assertEqual('1:oranges,3:peach,grape,melon', results.join(','));
+      },
+
+      testDollarMapObject: function(t){
+        var fruit = { name: 'banana', taste: 'sweet' };
+        var results = $.map(fruit, function(value, key) {
+          return key + '=' + value;
+        })
+        t.assertEqual('name=banana,taste=sweet', results.sort().join(','));
       },
 
       testEq: function(t){
-        var zepto = $('h1,p'),
-            zepto2 = zepto.eq(0);
-
-        t.assertLength(5, zepto);
-        t.assertLength(1, zepto2);
-
-        t.refuteIdentical(zepto, zepto2);
-        t.assertUndefined(zepto2.tagName);
+        var $els = $('#eq_test div');
+        t.assertLength(1, $els.eq(0));
+        t.assertLength(1, $els.eq(-1));
+        t.assertEqual($els.eq(-1)[0].className, 'eq2');
+        t.assertUndefined($els.eq(-1).tagName);
 
         t.assertLength(0, $('nonexistent').eq(0));
       },
@@ -436,19 +548,48 @@
         t.assertEqual('none', $('#show_hide_span3').get(0).style.display);
       },
 
+      testToggle: function(t){
+        $('#show_hide_div1').hide();
+        t.assertEqual('none', $('#show_hide_div1').get(0).style.display);
+
+        $('#show_hide_div1').toggle();
+        t.assertEqual('', $('#show_hide_div1').get(0).style.display);
+
+        $('#show_hide_div1').toggle();
+        t.assertEqual('none', $('#show_hide_div1').get(0).style.display);
+
+        $('#show_hide_div1').toggle(true);
+        t.assertEqual('', $('#show_hide_div1').get(0).style.display);
+
+        $('#show_hide_div1').toggle(true);
+        t.assertEqual('', $('#show_hide_div1').get(0).style.display);
+
+        $('#show_hide_div1').toggle(false);
+        t.assertEqual('none', $('#show_hide_div1').get(0).style.display);
+
+        $('#show_hide_div1').toggle(false);
+        t.assertEqual('none', $('#show_hide_div1').get(0).style.display);
+      },
+
       testOffset: function(t){
         // TODO
         t.assertNull($('#doesnotexist').offset());
       },
 
       testWidth: function(t){
-        t.assertEqual(100, $('#offset').width());
         t.assertNull($('#doesnotexist').width());
+
+        t.assertEqual(100, $('#offset').width());
+        $('#offset').width('90px');
+        t.assertEqual(90, $('#offset').width());
       },
 
       testHeight: function(t){
-        t.assertEqual(50, $('#offset').height());
         t.assertNull($('#doesnotexist').height());
+
+        t.assertEqual(50, $('#offset').height());
+        $('#offset').height('60px');
+        t.assertEqual(60, $('#offset').height());
       },
 
       testClosest: function(t){
@@ -532,16 +673,49 @@
       },
 
       testReplaceWith: function(t) {
-        $('div.second').replaceWith('<h2 id="replace_test">New heading</h2>');
-
-        t.assertUndefined($('div.second').get(0));
+        $('div.first').replaceWith('<h2 id="replace_test">New heading</h2>');
+        t.assertUndefined($('div.first').get(0));
         t.assert(document.getElementById("replace_test").nodeType);
         t.assertEqual($('.replacewith h2#replace_test').get(0), document.getElementById("replace_test"));
 
-        $('#replace_test').replaceWith($('#replace_test_div'));
+        $('#replace_test').replaceWith($('.replace_test_div'));
         t.assertUndefined($('#replace_test').get(0));
         t.assert(document.getElementsByClassName("replace_test_div")[0].nodeType);
         t.assertEqual($('.replacewith h2#replace_test').get(0), document.getElementsByClassName("replace_test")[0]);
+
+        //Multiple elements
+        $('.replacewith .replace_test_div').replaceWith('<div class="inner first">hi</div><div class="inner fourth">hello</div>');
+        t.assertLength(4,$('.replacewith div'));
+        t.assertEqual("inner first", $('.replacewith div')[0].className);
+        t.assertEqual("inner fourth", $('.replacewith div')[1].className);
+      },
+
+      testWrap: function(t) {
+        t.assert(document.getElementById("wrap_test_div").nodeType);
+
+        $('#wrap_test_div span').wrapAll('<div id="wrap_test" />');
+        t.assert(document.getElementById("wrap_test").nodeType);
+        t.assertEqual($("#wrap_test").children().length, 2);
+
+       	$('#wrap_test_div span').wrap('<div class="wrap_test" />');
+        t.assert(document.getElementsByClassName("wrap_test")[0].nodeType);
+        t.assertEqual($('#wrap_test_div span').length, $('.wrap_test').length);
+      },
+
+      testUnwrap: function(t){
+        var context=$("#unwrap_test");
+
+        //Element With no siblings
+        $(".unwrap_one span",context).unwrap();
+        t.assertLength(1,$("b",context));
+
+        //Element with siblings
+        $(".unwrap_two span",context).unwrap();
+        t.assertLength(0,$("b",context));
+        //make sure siblings are unaffected
+        t.assertLength(3,$("span",context));
+        //make sure parents are what they should be
+        t.assertEqual($("span",context).parent().get(0), document.getElementsByClassName("unwrap_one")[0]);
       },
 
       testFind: function(t){
@@ -559,7 +733,7 @@
       testFilter: function(t){
         var found = $('div');
         t.assertLength(2, found.filter('.filtertest'));
-        t.assertLength(0, found.filter('.doesntexist'));
+        t.assertLength(0, found.filter('.doesnotexist'));
         t.assertLength(1, found.filter('.filtertest').filter(':nth-child(2n)'));
       },
 
@@ -596,17 +770,27 @@
         t.assert(!$('#find1').is());
 
         t.assert($('div').is('#some_element'));
-        t.assert(!$('#does_not_exist').is('p'));
+        t.assert(!$('#doesnotexist').is('p'));
       },
 
       testCSS: function(t){
         var el = $('#some_element').get(0);
 
         $('#some_element').css('color', '#f00');
+        $('#some_element').css('margin-top', '10px');
+        $('#some_element').css('marginBottom', '5px');
+        $('#some_element').css('left', 42);
+        $('#some_element').css('z-index', 10);
+        $('#some_element').css('fontWeight', 300);
         $('#some_element').css('border', '1px solid rgba(255,0,0,1)');
         t.assertEqual('rgb(255, 0, 0)', el.style.color);
         t.assertEqual('rgb(255, 0, 0)', el.style.borderLeftColor);
         t.assertEqual('1px', el.style.borderLeftWidth);
+        t.assertEqual('10px', el.style.marginTop);
+        t.assertEqual('5px', el.style.marginBottom);
+        t.assertEqual('42px', el.style.left);
+        t.assertEqual(300, el.style.fontWeight);
+        t.assertEqual(10, el.style.zIndex);
 
         var style1 = $('#some_element').css('color');
         var style2 = $('#some_element').css('border');
@@ -692,6 +876,19 @@
         t.assertEqual(3, counter); // 1 = body click, 2 = element click, 3 = element mousedown
       },
 
+      testBindContext: function(t){
+        var context, handler = function(){
+          context = $(this);
+        };
+        $('#empty_test').bind("click",handler);
+        $('#empty_test').bind("mousedown",handler);
+        click($('#empty_test').get(0));
+        t.assertEqualCollection($('#empty_test'), context);
+        context = null;
+        mousedown($('#empty_test').get(0));
+        t.assertEqualCollection($('#empty_test'), context);
+      },
+
       testBindWithCustomData: function(t) {
         var counter = 0;
         var handler = function(ev,customData) { counter = customData.counter };
@@ -699,6 +896,53 @@
         $('#some_element').bind('custom', handler);
         $('#some_element').trigger('custom', { counter: 10 });
         t.assertEqual(10, counter);
+      },
+
+      testBindPreventDefault: function (t) {
+        var link = $('<a href="#"></a>'),
+            prevented = false;
+
+        link
+          .appendTo('body')
+          .bind('click', function () {
+            return false;
+          })
+          .bind('click', function (e) {
+            prevented = e.defaultPrevented;
+          })
+          .trigger('click');
+
+        t.assert(prevented);
+      },
+
+      testCreateEventObject: function(t){
+        var e = $.Event('custom');
+        t.assertEqual('custom', e.type);
+
+        var e2 = new $.Event('custom');
+        t.assertEqual('custom', e2.type);
+
+        var e3 = $.Event('custom', {customKey: 'customValue'});
+        t.assertEqual('custom', e3.type);
+        t.assertEqual('customValue', e3.customKey);
+      },
+
+      testTriggerEventObject: function(t){
+        var counter = 0,
+            customEventKey = 0;
+
+        var handler = function(ev,customData) {
+          counter = customData.counter;
+          customEventKey = ev.customKey;
+        };
+
+        var customEventObject = $.Event('custom', { customKey: 20 });
+
+        $('#some_element').bind('custom', handler);
+        $('#some_element').trigger(customEventObject, { counter: 10 });
+
+        t.assertEqual(10, counter);
+        t.assertEqual(20, customEventKey);
       },
 
       testEmpty: function(t) {
@@ -874,7 +1118,7 @@
         $(document.body).append('<p class="live" id="live_this_test"></p>');
 
         $('p.live').live('click', function(){
-          t.assertEqual(document.getElementById('#live_this_test'), this);
+          t.assertEqual(document.getElementById('live_this_test'), this);
         });
         click($('#live_this_test').get(0));
 
@@ -906,6 +1150,14 @@
         t.assertEqual(1, counter);
         click($('#some_element').get(0));
         t.assertEqual(1, counter);
+      },
+
+      testOneCallbackEvent: function(t){
+        var target, context, someElement = $('#some_element').get(0);
+        $(document.body).one('click', function(evt){ target = evt.target; context = $(this); });
+        click(someElement);
+        t.assertEqual(someElement, target);
+        t.assertEqualCollection($(document.body), context);
       },
 
       testAttr: function(t){
@@ -952,6 +1204,8 @@
         els.attr('value', '');
         t.assertEqual(els.get(0).value, els.attr('value'));
         t.assertEqual('', els.attr('value'));
+
+        els.get(0).value = 'Hello World'
       },
 
       testRemoveAttr: function(t) {
@@ -979,8 +1233,6 @@
       testVal: function(t) {
         var els = $('#attr_with_text_input');
 
-        els.get(0).value = "Hello World";
-
         t.assertEqual(els.get(0).value, els.val());
         t.assertEqual('Hello World', els.val());
 
@@ -988,6 +1240,7 @@
         t.assertEqual(els.get(0).value, els.val());
         t.assertEqual('', els.val());
 
+        els.get(0).value = "Hello World";
       },
 
       testChaining: function(t){
@@ -1080,6 +1333,24 @@
           '<div class="append">append1</div><div class="append">append2</div></div><div class="after">after1</div><div class="after">after2</div>',
           $('#beforeafter_container').html()
         );
+
+        //
+
+        var helloWorlds = [], appendContainer1 = $('<div> <div>Hello</div> <div>Hello</div> </div>'),
+            helloDivs = appendContainer1.find('div');
+
+        helloDivs.append(' world!');
+        helloDivs.each(function() { helloWorlds.push($(this).text()) })
+        t.assertEqual('Hello world!,Hello world!', helloWorlds.join(','));
+
+        //
+
+        var spans = [], appendContainer2 = $('<div> <div></div> <div></div> </div>'),
+            appendDivs = appendContainer2.find('div');
+
+        appendDivs.append($('<span>Test</span>'));
+        appendDivs.each(function() { spans.push($(this).html()) })
+        t.assertEqual('<span>Test</span>,<span>Test</span>', spans.join(','));
       },
 
       testAppendToPrependTo: function(t){
@@ -1119,6 +1390,62 @@
           '<div id="appendtoprependto"><div class="prependto">prependto1</div><div class="prependto">prependto2</div><div class="appendto">appendto1</div><div class="appendto">appendto2</div></div>',
           $('#appendtoprependto_container').html()
         );
+
+        //testing with a selector as parameter
+        $('#appendtoprependto_container').html('<div id="appendtoprependto"></div>');
+        ap.appendTo('#appendtoprependto');
+        pr.prependTo('#appendtoprependto');
+        t.assertEqual(
+          '<div id="appendtoprependto"><div>prependto</div>'+
+          '<div>appendto</div></div>',
+          $('#appendtoprependto_container').html()
+        );
+      },
+
+      testAppendEval: function (t) {
+        window.someGlobalVariable = false;
+        $('<' + 'script>window.someGlobalVariable = true;</script' + '>').appendTo('body');
+        t.assert(window.someGlobalVariable);
+
+        window.someGlobalVariable = false;
+        $('<' + 'script>this.someGlobalVariable = true;</script' + '>').appendTo('body');
+        t.assert(window.someGlobalVariable);
+      },
+
+      testHtmlEval: function (t) {
+        window.someGlobalVariable = false;
+        var div = $('<div></div>');
+        div
+          .appendTo('body')
+          .html('<' + 'script>window.someGlobalVariable = true;</script' + '>');
+        t.assert(window.someGlobalVariable);
+      },
+
+      testRemove: function (t) {
+        var newElement1 = $('<div id="some_new_element_1" />');
+
+        newElement1
+          .appendTo('body')
+          .remove();
+
+        t.assertEqual( $('#some_new_element_1').length, 0 );
+
+        //
+
+        var newElement2 = $('<div id="some_new_element_2" />'),
+            errorRaised = false;
+
+        newElement2.appendTo('body');
+
+        $('#some_new_element_2').remove();
+
+        try {
+          newElement2.remove();
+        } catch (e) {
+          errorRaised = true;
+        };
+
+        t.assert(!errorRaised);
       },
 
       testAddRemoveClass: function(t){
@@ -1159,6 +1486,9 @@
           return "blue";
         });
         t.assertEqual('red green', el.className);
+
+        $('#some_element').removeClass();
+        t.assertEqual('', el.className);
       },
 
       testHasClass: function(t){
@@ -1171,6 +1501,12 @@
         $('#some_element').addClass('orange');
         t.assert($('#some_element').hasClass('green'));
         t.assert($('#some_element').hasClass('orange'));
+      },
+
+      testHasClassEmpty: function(t){
+        var z = $('#doesnotexist');
+        t.assertEqual(0, z.size());
+        t.assertFalse(z.hasClass('a'));
       },
 
       testToggleClass: function(t){
@@ -1225,6 +1561,8 @@
         t.assertEqual($("p > span").index(".yay"), 0);
         t.assertEqual($("span").index("span"), 0);
         t.assertEqual($("span").index("boo"), -1);
+
+        t.assertEqual($('#index_test > *').eq(-1).index(), 1);
       },
 
       testBoolAttr: function (t) {
@@ -1248,15 +1586,20 @@
         t.assert(foo);
       },
 
-      testFormSubmit: function (t) {
-        // Test form submit action
-        var formSubmitted = false;
-        $('#some_form').get(0).submit = function (e) {
-          formSubmitted = true;
-          e.preventDefault();
-        };
-        $('#some_form').submit();
-        t.assert(formSubmitted);
+      testSlice: function (t) {
+        var $els = $("#slice_test div");
+        t.assertEqual($els.slice().length, 3);
+        t.assertEqual(typeof $els.slice().ready, 'function');
+        t.assertEqual($els.slice(-1)[0].className, 'slice3');
+      },
+
+      testEnd: function (t) {
+        t.assert($().end().length, 0);
+
+        var $endTest = $('#end_test');
+        var $endTest2 = $('#end_test').find('div').find('span').end().end();
+        t.assertEqual($endTest.length, $endTest2.length);
+        t.assertEqual($endTest.get(0), $endTest2.get(0));
       }
     });
   </script>

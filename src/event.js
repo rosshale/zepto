@@ -1,3 +1,7 @@
+//     Zepto.js
+//     (c) 2010, 2011 Thomas Fuchs
+//     Zepto.js may be freely distributed under the MIT license.
+
 (function($){
   var $$ = $.qsa, handlers = {}, _zid = 1;
   function zid(element) {
@@ -26,7 +30,13 @@
     var id = zid(element), set = (handlers[id] || (handlers[id] = []));
     events.split(/\s/).forEach(function(event){
       var callback = delegate || fn;
-      var proxyfn = function(event) { return callback(event, event.data) };
+      var proxyfn = function (event) {
+        var result = callback.call(element, event, event.data);
+        if (result === false) {
+          event.preventDefault();
+        }
+        return result;
+      };
       var handler = $.extend(parse(event), {fn: fn, proxy: proxyfn, sel: selector, del: delegate, i: set.length});
       set.push(handler);
       element.addEventListener(handler.e, proxyfn, false);
@@ -57,8 +67,8 @@
   $.fn.one = function(event, callback){
     return this.each(function(){
       var self = this;
-      add(this, event, function wrapper(){
-        callback();
+      add(this, event, function wrapper(evt){
+        callback.call(self, evt);
         remove(self, event, arguments.callee);
       });
     });
@@ -102,11 +112,22 @@
   };
 
   $.fn.trigger = function(event, data){
+    var type = event.type || event;
+    if(typeof event !== "object"){
+      event = document.createEvent('Events');
+      event.initEvent(type, true, true)
+    }
+    event.data = data;
     return this.each(function(){
-      var e = document.createEvent('Events');
-      e.initEvent(event, true, true)
-      e.data = data;
-      this.dispatchEvent(e);
+      this.dispatchEvent(event);
     });
   };
+
+  $.Event = function(src, props) {
+    var event = document.createEvent('Events');
+    if (props) $.extend(event, props);
+    event.initEvent(src, true, true);
+    return event;
+  };
+
 })(Zepto);
