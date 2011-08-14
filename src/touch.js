@@ -20,10 +20,12 @@
 
   $(document).ready(function(){
     $(document.body).bind('touchstart', function(e){
+      if (e.touches === undefined) return;
       touch.target = parentIfText(e.touches[0].target);
       touch.x1 = e.touches[0].pageX;
       touch.y1 = e.touches[0].pageY;
     }).bind('touchmove', function(e){
+      if (e.touches === undefined) return;
       touch.x2 = e.touches[0].pageX;
       touch.y2 = e.touches[0].pageY;
     }).bind('touchend', function(e){
