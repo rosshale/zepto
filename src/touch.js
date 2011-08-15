@@ -18,6 +18,14 @@
     }
   }
 
+  var longTapDelay = 750;
+  function longTap(){
+    if (touch.last && (Date.now() - touch.last >= longTapDelay)) {
+      $(touch.target).trigger('longTap');
+      touch = {};
+    }
+  }
+
   $(document).ready(function(){
     $(document.body).bind('touchstart', function(e){
       if (e.touches === undefined) return;
@@ -41,7 +49,7 @@
     }).bind('touchcancel', function(){ touch = {} });
   });
 
-  ['swipe', 'swipeLeft', 'swipeRight', 'swipeUp', 'swipeDown', 'tap'].forEach(function(m){
+  ['swipe', 'swipeLeft', 'swipeRight', 'swipeUp', 'swipeDown', 'doubleTap', 'tap', 'longTap'].forEach(function(m){
     $.fn[m] = function(callback){ return this.bind(m, callback) }
   });
 })(Zepto);

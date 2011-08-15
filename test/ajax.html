@@ -42,6 +42,35 @@
         });
       },
 
+      testAjaxNotNullTimeout: function (t) {
+        var startTime = new Date();
+        t.pause();
+        $.ajax({
+          url:     'fixtures/ajax_load_simple.html',
+          timeout: 300,
+          beforeSend: function () {
+            t.resume(function () {
+              this.assert(new Date() - startTime > 300);
+            });
+          }
+        });
+      },
+
+      testAjaxNullTimeout: function (t) {
+        var startTime = new Date();
+        t.pause();
+        $.ajax({
+          url:     'fixtures/ajax_load_simple.html',
+          timeout: 0,
+          beforeSend: function () {
+            t.resume(function () {
+              this.assert(new Date() - startTime < 10);
+            });
+          }
+        });
+      },
+
+
       // TODO: It's time to integrate a real webserver (webrick) to test POSTS
       //
       //testAjaxPostWithData: function(t) {
@@ -198,6 +227,24 @@
         $.ajax({ dataType: 'json', success: function(json) {result = json } });
         MockXHR.last.ready(4, 200, '{"hello":"world"}');
         t.assertEqual("world", result.hello);
+      },
+
+      testJSONResponseBodiesAreNotParsedWhenDataTypeOptionIsJSONButResponseIsEmptyString: function(t) {
+        var result = {};
+        var success = false;
+        $.ajax({ dataType: 'json', success: function(json) {result = json; success = true } });
+        MockXHR.last.ready(4, 200, '');
+        t.assert(success);
+        t.assertEqual('', result);
+      },
+
+      testJSONResponseBodiesAreNotParsedWhenDataTypeOptionIsJSONButResponseIsSingleSpace: function(t) {
+        var result = {};
+        var success = false;
+        $.ajax({ dataType: 'json', success: function(json) {result = json; success = true } });
+        MockXHR.last.ready(4, 200, ' ');
+        t.assert(success);
+        t.assertEqual(' ', result);
       },
 
       testDataOptionIsConvertedToSerializedForm: function(t) {

@@ -59,6 +59,10 @@
     error: empty,
     // Callback that is executed on request complete (both: error and success)
     complete: empty,
+    // Transport
+    xhr: function () {
+      return new window.XMLHttpRequest();
+    },
     // MIME types mapping
     accepts: {
       script: 'text/javascript, application/javascript',
@@ -66,7 +70,9 @@
       xml:    'application/xml, text/xml',
       html:   'text/html',
       text:   'text/plain'
-    }
+    },
+    // Default timeout
+    timeout: 0
   };
 
   // ### $.ajax
@@ -87,6 +93,11 @@
   //     dataType ('json')     — what response type you accept from
   //                             the server:
   //                             'json', 'xml', 'html', or 'text'
+  //     timeout (0)           — request timeout
+  //     beforeSend            — callback that is executed before
+  //                             request send
+  //     complete              — callback that is executed on request
+  //                             complete (both: error and success)
   //     success               — callback that is executed if
   //                             the request succeeds
   //     error                 — callback that is executed if
@@ -95,11 +106,12 @@
   // *Example:*
   //
   //     $.ajax({
-  //        type:     'POST',
-  //        url:      '/projects',
-  //        data:     { name: 'Zepto.js' },
-  //        dataType: 'html',
-  //        success:  function (data) {
+  //        type:       'POST',
+  //        url:        '/projects',
+  //        data:       { name: 'Zepto.js' },
+  //        dataType:   'html',
+  //        timeout:    100,
+  //        success:    function (data) {
   //            $('body').append(data);
   //        },
   //        error:    function (xhr, type) {
@@ -129,7 +141,7 @@
     }
 
     var mime = settings.accepts[settings.dataType],
-        xhr = new XMLHttpRequest();
+        xhr = $.ajaxSettings.xhr();
 
     settings.headers = $.extend({'X-Requested-With': 'XMLHttpRequest'}, settings.headers || {});
     if (mime) settings.headers['Accept'] = mime;
@@ -138,7 +150,7 @@
       if (xhr.readyState == 4) {
         var result, error = false;
         if ((xhr.status >= 200 && xhr.status < 300) || xhr.status == 0) {
-          if (mime == 'application/json' && !(xhr.responseText == '' || xhr.responseText == ' ')) {
+          if (mime == 'application/json' && !(/^\s*$/.test(xhr.responseText))) {
             try { result = JSON.parse(xhr.responseText); }
             catch (e) { error = e; }
           }
@@ -154,14 +166,23 @@
     };
 
     xhr.open(settings.type, settings.url, true);
-    if (settings.beforeSend(xhr, settings) === false) {
-      xhr.abort();
-      return false;
-    }
 
     if (settings.contentType) settings.headers['Content-Type'] = settings.contentType;
     for (name in settings.headers) xhr.setRequestHeader(name, settings.headers[name]);
-    xhr.send(settings.data);
+
+    var sendRequest = function () {
+      if (settings.beforeSend(xhr, settings) === false) {
+        xhr.abort();
+        return false;
+      }
+      xhr.send(settings.data);
+    };
+
+    if (settings.timeout > 0) {
+      setTimeout(sendRequest, settings.timeout);
+    } else if (sendRequest() === false) {
+      return false;
+    }
 
     return xhr;
   };
